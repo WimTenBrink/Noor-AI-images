@@ -1,0 +1,8 @@
+{
+  "name": "The Band Noor! Artwork",
+  "description": "AI-powered Prompt Generator for the band Noor, featuring Miranda, Annelies, Fannie, and Emma. This will generate images of the band members and Senna Bakker for covers, reports and just for fun.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

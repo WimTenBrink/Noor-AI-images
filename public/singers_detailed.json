@@ -1,0 +1,192 @@
+{
+  "$schema": "https://katje.bv/schemas/v1.0.0/singers_detailed.json",
+  "version": "1.0.0",
+  "title": "Katje B.V. - Noor Singers Detailed Profile Dataset",
+  "singers": [
+    {
+      "id": "miranda",
+      "name": "Miranda Noor",
+      "role": "Soprano & Bass Guitarist",
+      "Base": "Young woman of British/Dutch/Indian ethnicity, slender athletic frame with subtle muscle tone, warm smooth radiant olive skin, deep espresso black naturally wavy hair flowing down her back with auburn highlights in natural light, warm dark hazel eyes with gold flecks and long dark lashes, gracefully proportioned oval face, high cheekbones, defined jawline, straight elegant nose, full expressive lips with defined cupid's bow, standing gracefully in a natural confident relaxed pose.",
+      "Face": "Young woman of British/Dutch/Indian ethnicity, gracefully proportioned face with smooth radiant olive skin tone, high cheekbones, defined jawline, straight elegant nose, full expressive lips with defined cupid's bow, warm dark hazel eyes with gold flecks, long dark eyelashes, delicate dark eyebrows, deep espresso black naturally wavy hair framing her cheeks and neck with subtle auburn highlights.",
+      "Torso": "Young woman of British/Dutch/Indian ethnicity, view from belly button up, slender athletic torso with smooth radiant olive skin tone, high cheekbones, dark hazel eyes with gold flecks, espresso black wavy hair flowing over shoulders, naturally rounded firm B-cup breasts in high position, delicate contours, soft warm rosy-brown nipples and circular rosy areolas.",
+      "Body": "Young woman of British/Dutch/Indian ethnicity, full height view from head to bare feet, slender athletic body with smooth radiant olive skin tone, statuesque posture, espresso black wavy hair flowing past waist, dark hazel eyes, naturally rounded firm B-cup breasts with soft rosy-brown nipples, smooth flat stomach, slender waist, graceful hips, smooth radiant olive skin across pelvis with neatly proportioned natural feminine genitals anatomy, long lean toned legs, bare feet.",
+      "appearance": {
+        "ethnicity": "British/Dutch/Indian",
+        "height": "1.65 m",
+        "weight": "58 kg",
+        "build": "Slender and athletic frame with toned musculature from bass playing",
+        "skinColor": "Warm olive tone, smooth and radiant",
+        "eyeColor": "Warm dark hazel with flecks of gold, large almond-shaped, long dark lashes",
+        "hairColorStyle": "Deep espresso black with subtle auburn highlights in sun, long, thick, naturally wavy",
+        "faceDetails": "Gracefully proportioned with high cheekbones, defined jawline, straight elegant nose, full expressive lips with defined cupid's bow",
+        "breasts": "Naturally rounded and firm B-cup, high position, warm rosy-brown nipples",
+        "genitals": "Naturally smooth olive skin, neatly proportioned feminine anatomy"
+      },
+      "personality": {
+        "traits": ["passionate", "resilient", "empathetic", "storyteller", "introspective"],
+        "advantages": ["highly intelligent (IQ 150)", "creative musician", "deep understanding of people"],
+        "disadvantages": ["intensely private", "prone to bouts of melancholy", "fiercely independent"]
+      },
+      "otherDetails": {
+        "birthDate": "2005-01-15",
+        "birthplace": "New York City, USA",
+        "nationality": "American, British, Dutch",
+        "sexuality": "Lesbian",
+        "relationship": "Married to Annelies Brink",
+        "instrument": "Vintage Fender Jazz Bass",
+        "vocalSpecialty": "Female Soprano - Ethereal, operatic, High-pitched, High-register, Angelic, Shimmering",
+        "languages": ["English", "Dutch", "Hindi"],
+        "lifestyle": "Barefoot preference everywhere, naturist resort visitor, complete body positivity"
+      }
+    },
+    {
+      "id": "annelies",
+      "name": "Annelies Brink",
+      "role": "Alto, Graphic Designer & Crwth Player",
+      "Base": "Young woman of Dutch ethnicity, slender healthy female build with graceful posture, fair complexion with a healthy radiant glow and light sun freckles across cheekbones, warm chestnut brown shoulder-length wavy hair with auburn highlights, bright blue almond-shaped eyes, elegant oval face, straight nose with a subtly upturned tip, full naturally rosy lips, seated naturally in a calm balanced pose.",
+      "Face": "Young woman of Dutch ethnicity, elegant oval-shaped face with fair complexion and subtle light sun freckles across cheekbones, bright blue almond-shaped eyes with long dark lashes, straight nose with a subtly upturned tip, full naturally rosy lips with charming cupid's bow, soft rosy cheeks, warm chestnut brown shoulder-length wavy hair framing her cheeks.",
+      "Torso": "Young woman of Dutch ethnicity, view from belly button up, slender healthy torso with fair glowing skin and light freckles over collarbones, bright blue almond-shaped eyes, chestnut brown wavy hair framing shoulders, naturally rounded full B-cup breasts in high firm position, soft delicate rose nipples and soft pink areolas.",
+      "Body": "Young woman of Dutch ethnicity, full height view from head to bare feet, slender healthy build with fair glowing skin, graceful standing posture, shoulder-length chestnut brown wavy hair, bright blue eyes, light sun freckles on nose and cheeks, naturally rounded full B-cup breasts with soft delicate rose nipples, smooth fair belly, slender waist, smooth fair pelvic region with delicate natural feminine genitals anatomy, long shapely legs, bare feet.",
+      "appearance": {
+        "ethnicity": "Dutch",
+        "height": "1.70 m",
+        "weight": "65 kg",
+        "build": "Slender and healthy female figure with balanced posture",
+        "skinColor": "Fair complexion with a healthy glow and light freckles upon sun exposure",
+        "eyeColor": "Bright blue, almond-shaped",
+        "hairColorStyle": "Warm chestnut brown with auburn highlights, shoulder-length, thick and naturally wavy",
+        "faceDetails": "Elegantly oval-shaped face, straight nose with subtly upturned tip, full naturally rosy lips with charming cupid's bow",
+        "breasts": "Naturally rounded and full B-cup, high and firm position, soft delicate rose nipples",
+        "genitals": "Smooth fair skin, delicate feminine anatomy"
+      },
+      "personality": {
+        "traits": ["supportive", "creative", "calm", "optimistic", "loyal"],
+        "advantages": ["creative problem-solver", "empathetic listener", "detail-oriented"],
+        "disadvantages": ["procrastinator", "overly self-critical"]
+      },
+      "otherDetails": {
+        "birthDate": "2006-05-22",
+        "birthplace": "Amsterdam, Netherlands",
+        "nationality": "Dutch",
+        "sexuality": "Lesbian",
+        "relationship": "Married to Miranda Noor",
+        "instrument": "Crwth / Acoustic instruments & Graphic Design",
+        "vocalSpecialty": "Female Alto - Choral, Alt-Rock, raspy husky tone, Deep, Low-mid focused, Gravelly, Haunting",
+        "languages": ["Dutch", "English"],
+        "lifestyle": "Barefoot preference everywhere, naturist resort visitor, complete body positivity"
+      }
+    },
+    {
+      "id": "fannie",
+      "name": "Fannie de Jong",
+      "role": "Mezzo-Soprano, Drummer & Beatboxer",
+      "Base": "Young woman of American/Dutch ethnicity, tall slender athletic runner's frame with long lean limbs, fair skin with a charming spray of light freckles across nose and cheeks, stylish round tortoiseshell wire-rimmed glasses resting on her cute button nose, sun-kissed fine blonde hair styled in a high bouncy ponytail, bright blue wide curious eyes behind glass lenses, softly rounded face, full lower lip with a mischievous playful smile, dynamic energetic standing pose.",
+      "Face": "Young woman of American/Dutch ethnicity, softly rounded youthful face with fair glowing skin and a spray of light freckles across nose and cheeks, stylish round tortoiseshell wire-rimmed glasses, cute button-tipped upturned nose, friendly bright blue wide curious eyes behind glass lenses, full lower lip with a mischievous warm smile, high bouncy ponytail of sun-kissed fine blonde hair.",
+      "Torso": "Young woman of American/Dutch ethnicity, view from belly button up, tall slender athletic torso with fair skin and light freckles across shoulders, stylish round tortoiseshell wire-rimmed glasses, bright blue eyes behind lenses, high bouncy blonde ponytail, naturally rounded athletic A-cup breasts in high position, smooth chest, small soft light pink nipples and delicate pale pink areolas.",
+      "Body": "Young woman of American/Dutch ethnicity, full height view from head to bare feet, tall slender athletic runner's build with long lean legs, fair skin with freckles across nose and body, stylish round tortoiseshell wire-rimmed glasses, high bouncy sun-kissed blonde ponytail, bright blue eyes behind lenses, naturally rounded athletic A-cup breasts with soft light pink nipples, taut flat stomach, narrow waist, smooth fair pelvic region with light freckles and youthful natural feminine genitals anatomy, long slender legs, bare feet.",
+      "appearance": {
+        "ethnicity": "American/Dutch",
+        "height": "1.78 m",
+        "weight": "62 kg",
+        "build": "Tall, slender, and athletic frame with long lean legs of a runner",
+        "skinColor": "Fair complexion with a charming spray of light freckles across nose and cheeks",
+        "eyeColor": "Friendly bright blue, wide and curious",
+        "hairColorStyle": "Sun-kissed blonde, fine and plentiful with slight natural wave, worn in high bouncy ponytail",
+        "faceDetails": "Softly rounded face, stylish round tortoiseshell wire-rimmed glasses, cute button-tipped upturned nose, full lower lip, mischievous smile",
+        "breasts": "Naturally rounded athletic A-cup, high position on chest",
+        "genitals": "Fair skin with light freckling nearby, youthful feminine anatomy"
+      },
+      "personality": {
+        "traits": ["playful", "witty", "energetic", "curious", "loyal"],
+        "advantages": ["quick-witted", "optimistic", "makes friends easily"],
+        "disadvantages": ["impulsive", "easily distracted", "mischievous"]
+      },
+      "otherDetails": {
+        "birthDate": "2007-09-10",
+        "birthplace": "Utrecht, Netherlands",
+        "nationality": "Dutch",
+        "sexuality": "Lesbian",
+        "relationship": "Lovers with Emma Vermeer",
+        "instrument": "Tama Drumkit & Percussion",
+        "vocalSpecialty": "Female Mezzo-Soprano - Soulful, Rap, wide dramatic vibrato, Controlled, Syncopated, Staccato",
+        "languages": ["Dutch", "English"],
+        "lifestyle": "Barefoot preference everywhere, naturist resort visitor, complete body positivity"
+      }
+    },
+    {
+      "id": "emma",
+      "name": "Emma Vermeer",
+      "role": "Feminine Contralto & Synthesist",
+      "Base": "Young woman of Swedish ethnicity, tall statuesque athletic build with broad feminine shoulders, porcelain clear fair skin, striking natural autumn reddish-brown hair in shoulder-length loose waves, captivating light green almond-shaped eyes with a confident direct gaze, oval face with high cheekbones, defined elegant jawline, straight classical nose, full well-defined lips with a subtle knowing smirk, standing in a bold calm posture.",
+      "Face": "Young woman of Swedish ethnicity, oval face with porcelain clear fair skin, high cheekbones, defined elegant jawline, straight classical nose, full well-defined lips with a subtle knowing smirk, captivating light green almond-shaped eyes with a confident direct gaze, autumn reddish-brown wavy hair elegantly framing her jawline.",
+      "Torso": "Young woman of Swedish ethnicity, view from belly button up, tall statuesque torso with broad feminine shoulders and porcelain fair skin, captivating light green eyes, autumn reddish-brown wavy hair over shoulders, small naturally shaped athletic A-cup breasts in high position, pale rose nipples and delicate rose areolas.",
+      "Body": "Young woman of Swedish ethnicity, full height view from head to bare feet, tall statuesque athletic posture with broad feminine shoulders and long slender legs, porcelain clear fair skin, shoulder-length autumn reddish-brown wavy hair, light green eyes, small naturally shaped athletic A-cup breasts with pale rose nipples, smooth flat abdomen, shapely hips, smooth porcelain pelvic region with elegant natural feminine genitals anatomy, long slender legs, bare feet.",
+      "appearance": {
+        "ethnicity": "Swedish",
+        "height": "1.80 m",
+        "weight": "64 kg",
+        "build": "Tall, statuesque, and athletic build with broad feminine shoulders",
+        "skinColor": "Porcelain fair, smooth and clear",
+        "eyeColor": "Captivating light green, almond-shaped, confident direct gaze",
+        "hairColorStyle": "Striking natural reddish-brown like autumn leaves, shoulder-length loose effortless waves",
+        "faceDetails": "Oval face with high cheekbones, defined elegant jawline, straight classical nose, full well-defined lips with subtle knowing smirk",
+        "breasts": "Small athletic A-cup, naturally shaped, high position",
+        "genitals": "Porcelain fair skin, elegant statuesque feminine anatomy"
+      },
+      "personality": {
+        "traits": ["confident", "mischievous", "loyal", "perceptive", "charming"],
+        "advantages": ["natural leader", "very perceptive", "fiercely loyal"],
+        "disadvantages": ["stubborn", "enjoys stirring up playful trouble", "overly confident"]
+      },
+      "otherDetails": {
+        "birthDate": "2008-11-03",
+        "birthplace": "Amsterdam, Netherlands",
+        "nationality": "Dutch",
+        "sexuality": "Lesbian",
+        "relationship": "Lovers with Fannie de Jong",
+        "instrument": "Vintage Roland Juno-106 Synthesizer",
+        "vocalSpecialty": "Female Contralto - Bluesy, resonant chest voice, Off-beat, Velvety, Melancholy",
+        "languages": ["Dutch", "English"],
+        "lifestyle": "Barefoot preference everywhere, naturist resort visitor, complete body positivity"
+      }
+    },
+    {
+      "id": "senna",
+      "name": "Senna Bakker",
+      "role": "Female Reporter & Urban Media Correspondent",
+      "Base": "Young woman of Dutch ethnicity, stylish urban athletic build with polished city posture, smooth fair-to-olive glowing skin, chic honey-blonde shoulder-length bob haircut with modern textured styling, warm amber-brown expressive eyes with long dark lashes, oval face with refined cheekbones, delicate straight nose, full naturally defined lips with a smart curious smile, stylish urban posture wearing sleek footwear.",
+      "Face": "Young woman of Dutch ethnicity, oval face with smooth fair-to-olive glowing skin, warm amber-brown expressive eyes with long dark lashes, chic honey-blonde shoulder-length bob haircut, delicate straight nose, full naturally defined lips with a subtle observant smile.",
+      "Torso": "Young woman of Dutch ethnicity, view from belly button up, stylish urban torso with smooth glowing fair-to-olive skin, warm amber-brown eyes, chic honey-blonde bob haircut, naturally rounded B-cup breasts in high position, subtle delicate rosy nipples and soft pink areolas.",
+      "Body": "Young woman of Dutch ethnicity, full height view from head to sleek shoes, stylish urban build with smooth glowing fair-to-olive skin, honey-blonde shoulder-length bob, amber-brown eyes, naturally rounded B-cup breasts with soft rosy nipples, smooth flat stomach, slender waist, graceful hips, smooth pelvic region with natural feminine anatomy, long slender legs, stylish footwear.",
+      "appearance": {
+        "ethnicity": "Dutch",
+        "height": "1.72 m",
+        "weight": "60 kg",
+        "build": "Slender, stylish urban build with confident reporter posture",
+        "skinColor": "Smooth fair-to-olive, healthy urban radiance",
+        "eyeColor": "Warm amber-brown, expressive and sharp",
+        "hairColorStyle": "Honey-blonde, chic shoulder-length bob with soft textured waves",
+        "faceDetails": "Oval face with refined cheekbones, delicate straight nose, inquisitive defined lips",
+        "breasts": "Naturally rounded B-cup, firm high position",
+        "genitals": "Smooth fair-to-olive skin, natural feminine anatomy"
+      },
+      "personality": {
+        "traits": ["inquisitive", "articulate", "confident", "perceptive", "charismatic"],
+        "advantages": ["sharp investigative mind", "excellent interviewer", "charismatic communicator"],
+        "disadvantages": ["overly persistent", "workaholic tendencies"]
+      },
+      "otherDetails": {
+        "birthDate": "2004-03-18",
+        "birthplace": "Rotterdam, Netherlands",
+        "nationality": "Dutch",
+        "sexuality": "Bisexual",
+        "relationship": "Single / Media Correspondent",
+        "instrument": "Press Microphone & Recording Rig",
+        "vocalSpecialty": "Female Spoken / Commentary - Articulate, sharp, clear urban broadcast voice",
+        "languages": ["Dutch", "English", "French"],
+        "lifestyle": "Urban city reporter, always wearing footwear in every environment, stylish shoes policy"
+      }
+    }
+  ]
+}
