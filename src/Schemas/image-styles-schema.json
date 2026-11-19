@@ -1,0 +1,68 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://katje.bv/schemas/v1.0.0/image-styles.json",
+  "title": "NoorMusicImageStyles",
+  "version": "1.0.0",
+  "description": "JSON Schema for Noor Music Image Styles, Aesthetic Modifiers, and Graphic Art Traditions dataset.",
+  "type": "object",
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "type": "string" },
+    "title": { "type": "string" },
+    "description": { "type": "string" },
+    "author": { "type": "string" },
+    "license": { "type": "string" },
+    "totalStyles": { "type": "integer" },
+    "totalCategories": { "type": "integer" },
+    "categories": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "List of artistic and photographic style categories"
+    },
+    "categorySummary": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "category": { "type": "string" },
+          "count": { "type": "integer" }
+        },
+        "required": ["category", "count"]
+      }
+    },
+    "styles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "description": "Unique alphanumeric style identifier" },
+          "label": { "type": "string", "description": "Human-readable display name of the style" },
+          "category": { "type": "string", "description": "Category or artistic genre classification" },
+          "description": { "type": "string", "description": "Concise overview of aesthetic hallmarks" },
+          "promptModifier": { "type": "string", "description": "Base visual style prompt modifier text" },
+          "std1Modifier": { "type": "string", "description": "Standard Prompt 1 modifier (spontaneous, natural composition)" },
+          "std2Modifier": { "type": "string", "description": "Standard Prompt 2 modifier (fashion editorial photoshoot)" },
+          "std3Modifier": { "type": "string", "description": "Standard Prompt 3 modifier (intimate group clustering)" }
+        },
+        "required": [
+          "id",
+          "label",
+          "category",
+          "description",
+          "promptModifier",
+          "std1Modifier",
+          "std2Modifier",
+          "std3Modifier"
+        ]
+      }
+    }
+  },
+  "required": [
+    "version",
+    "title",
+    "totalStyles",
+    "totalCategories",
+    "categories",
+    "styles"
+  ]
+}

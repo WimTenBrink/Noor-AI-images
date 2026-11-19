@@ -76,6 +76,8 @@ PROMPT & PHRASING CONSTRAINTS:
    - Physical description (Young woman / Non-human species -> hair color and style, eyes, skin tone, facial features, build) -> Scene Environment & Atmospheric Setting -> Technical quality parameters ("4k resolution, cinematic 16:9 widescreen, ultra-detailed photorealistic, masterpiece").
 5. **SINGLE CHARACTER ONLY**:
    - Focus strictly on this ONE single subject (${subjectName}).
+6. **VISUAL COMPONENTS ONLY**:
+   - Character prompts must describe ONLY physical visual components (skin tone, hair color and style, eyes, face, body build, posture). Strictly DO NOT include professions, careers, musical roles, or non-visual backgrounds (such as 'soprano', 'alto', 'reporter', 'drummer', etc.) in character prompts or scene prompts.
 
 OUTPUT FORMAT:
 Return a JSON object with:

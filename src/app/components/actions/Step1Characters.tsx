@@ -163,9 +163,24 @@ export const Step1Characters: React.FC<Step1CharactersProps> = ({
                     <h4 className={`text-sm font-bold truncate ${isEnabled ? 'text-lavender-accent' : 'text-lavender-text/70'}`}>
                       {singer.name}
                     </h4>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${roleInfo.bg} ${roleInfo.border} ${roleInfo.color} shrink-0`}>
-                      {roleInfo.badge}
-                    </span>
+                    <div className="flex items-center gap-1 shrink-0">
+                      {onShowSingerDetails && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onShowSingerDetails(singer.id);
+                          }}
+                          className="p-1 text-lavender-text/80 hover:text-lavender-accent hover:bg-lavender-bg rounded border border-lavender-border/60 transition-colors"
+                          title={`View ${singer.name} Markdown Biography`}
+                        >
+                          <Info size={12} />
+                        </button>
+                      )}
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${roleInfo.bg} ${roleInfo.border} ${roleInfo.color}`}>
+                        {roleInfo.badge}
+                      </span>
+                    </div>
                   </div>
 
                   <p className="text-xs font-medium text-lavender-text/80 mt-0.5 line-clamp-1">

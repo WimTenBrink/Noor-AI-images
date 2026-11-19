@@ -16,6 +16,9 @@ import {
   downloadFarmhouseSchema,
   downloadLogsSchema,
   downloadJobsSchema,
+  downloadRemixPromptSchema,
+  downloadImageStylesSchema,
+  downloadImageStylesJson,
   SCHEMA_HELP_SONG_MD,
   SCHEMA_HELP_COVER_ART_MD,
   SCHEMA_HELP_VIDEO_PROMPTS_MD,
@@ -26,7 +29,9 @@ import {
   SCHEMA_VERSION_HISTORY_OVERVIEW_MD,
   SCHEMA_HELP_SINGERS_DETAILED_MD,
   SCHEMA_HELP_WARDROBES_MD,
-  SCHEMA_HELP_FARMHOUSE_MD
+  SCHEMA_HELP_FARMHOUSE_MD,
+  SCHEMA_HELP_REMIX_PROMPT_MD,
+  SCHEMA_HELP_IMAGE_STYLES_MD
 } from '../../constants/jsonSchemas';
 import { SingerDialogItem } from '../components/SingerDialog';
 
@@ -168,7 +173,7 @@ export function useNoorApp() {
     // Step navigation
     if (action.startsWith('step-')) {
       const stepNum = parseInt(action.replace('step-', ''), 10);
-      if (stepNum >= 1 && stepNum <= 8) {
+      if (stepNum >= 1 && stepNum <= 10) {
         setTargetStep(stepNum);
         return;
       }
@@ -180,6 +185,20 @@ export function useNoorApp() {
     }
 
     // JSON datasets and schemas
+    if (action === 'schema-remix-prompt') {
+      downloadRemixPromptSchema();
+      log('info', 'Downloaded Remix Prompt Schema');
+      return;
+    }
+    if (action === 'help-schema-remix-prompt') {
+      setHelpContent({
+        title: 'Remix Prompt Schema Help',
+        content: SCHEMA_HELP_REMIX_PROMPT_MD,
+        filename: 'SCHEMA_REMIX_PROMPT.md',
+        filePath: '/markdown/schemas/schema_remix_prompt.md'
+      });
+      return;
+    }
     if (action === 'farmhouse-json') {
       downloadPublicJson('/farmhouse.json', 'farmhouse.json');
       log('info', 'Downloaded Farmhouse Dataset');
@@ -223,6 +242,16 @@ export function useNoorApp() {
     if (action === 'schema-jobs') {
       downloadJobsSchema();
       log('info', 'Downloaded Jobs Schema');
+      return;
+    }
+    if (action === 'image-styles-json') {
+      downloadImageStylesJson();
+      log('info', 'Downloaded Image Styles Dataset');
+      return;
+    }
+    if (action === 'schema-image-styles') {
+      downloadImageStylesSchema();
+      log('info', 'Downloaded Image Styles Schema');
       return;
     }
 
@@ -287,6 +316,15 @@ export function useNoorApp() {
         content: SCHEMA_HELP_JOBS_MD,
         filename: 'SCHEMA_JOBS.md',
         filePath: '/markdown/schemas/schema_jobs.md'
+      });
+      return;
+    }
+    if (action === 'help-schema-image-styles') {
+      setHelpContent({
+        title: 'Image Styles Dataset Schema Help',
+        content: SCHEMA_HELP_IMAGE_STYLES_MD,
+        filename: 'SCHEMA_IMAGE_STYLES.md',
+        filePath: '/markdown/schemas/schema_image_styles.md'
       });
       return;
     }

@@ -1,4 +1,5 @@
 import { ForbiddenTopics } from '../types';
+import { sanitizeForGeminiSafety } from '../lib/remixHelper';
 
 export const GENERATE_PROMPT = (
   instructions: string, 
@@ -1081,7 +1082,7 @@ export const GENERATE_SINGER_ACTION_PROMPT = (
   }
 ) => {
   const singerSections = sceneDetails.activeSingers.map(s => {
-    return `- **${s.name}** (${s.role}, ${s.ageLabel}):
+    return `- **${s.name}** (${s.ageLabel}):
   Physical Appearance Base: ${s.basePrompt}
   Action & Pose: ${s.action}
   ${s.wardrobeText ? `Wardrobe: ${s.wardrobeText}` : 'Wardrobe: Default natural setting'}`;
@@ -1109,15 +1110,46 @@ ${sceneDetails.baselinePrompt ? `**BASELINE ASSEMBLED PROMPT (For reference and 
 1. Maintain positive, descriptive scene instructions.
 2. Structure the output into separate discrete fields for characters, actions, wardrobes, lighting, weather, framing, and style.
 3. Assemble the \`finalPrompt\` field in the exact sequence:
-   - Paragraph for each character's physical description (name, age, physical appearance)
+   - Paragraph for each character's physical description (name, age descriptor, physical appearance)
    - Paragraph for each character's action and pose
    - Paragraph for each character's wardrobe (if applicable)
    - Paragraph for lighting
    - Paragraph for weather & background environment
    - Paragraph for camera framing
    - Paragraph for art style & rendering quality
+4. **VISUAL COMPONENTS ONLY FOR CHARACTERS**: Character descriptions MUST contain ONLY visible physical attributes (skin tone, hair color and style, eyes, facial features, body build, posture). Strictly DO NOT include professions, careers, musical roles, personality traits, or non-visual backgrounds (such as 'soprano', 'bass guitarist', 'alto', 'graphic designer', 'reporter', 'drummer', 'synthesist', 'vocalist', 'runner', etc.) as they have no influence on the visual rendering.
 
 Return strictly valid JSON matching the Singer Action Prompt schema.`;
+};
+
+export const GENERATE_REMIX_PROMPT = (
+  basePrompt: string,
+  userInstructions: string,
+  sceneTitle?: string
+) => {
+  const safeBasePrompt = sanitizeForGeminiSafety(basePrompt);
+  const safeInstructions = sanitizeForGeminiSafety(userInstructions);
+
+  return `Please rewrite and optimize the entire scene prompt according to the user's revision commands, crafting a clean, high-density, pure visual prompt tailored specifically for WAN Video and generative image engines:
+
+**CURRENT BASE PROMPT:**
+${safeBasePrompt}
+
+**USER REVISION COMMANDS / INSTRUCTIONS:**
+${safeInstructions}
+
+${sceneTitle ? `**SCENE TITLE:** ${sceneTitle}\n` : ''}
+
+**WAN VIDEO & IMAGE ENGINE REWRITE DIRECTIVES:**
+1. **Full Rewrite & Synthesis:** Rewrite the whole prompt cohesively to integrate the user's revision commands seamlessly.
+2. **Pure Visual Focus (Zero Non-Visual Details):**
+   - Strictly omit all mentions of professions, careers, or musical roles (no 'soprano', 'alto', 'lead singer', 'vocalist', 'drummer', 'bass guitarist', 'synthesist', 'graphic designer', 'reporter', 'musician', 'band member').
+   - Strictly omit character internal thoughts, backstories, unseen personality traits, and meta buzzwords.
+   - Describe only visible physical features, dynamic poses, concrete actions, fabric textures/wardrobe, cinematic lighting parameters, environment spatial geometry, camera framing, and artistic medium.
+3. **Inclusive Phrasing Only:** Describe exclusively what is visually present in the scene with affirmative language. No negative keywords or subtractions.
+4. **Structured Format with Line Breaks:** Structure the final rewritten prompt with clean line breaks (\\n) separating: Characters -> Actions -> Wardrobe -> Lighting -> Weather & Background Environment -> Camera Framing -> Artistic Style.
+
+Output strictly valid JSON matching the Remix Prompt Schema.`;
 };
 
 

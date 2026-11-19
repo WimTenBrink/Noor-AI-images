@@ -37,34 +37,71 @@ export async function generateSong(
   }
   contents.push({ text: prompt });
 
-  const generatePromise = genAI.models.generateContent({
-    model: "gemini-3.7-flash",
-    contents: contents,
-    config: {
-      systemInstruction: systemInstruction || SYSTEM_INSTRUCTIONS,
-      responseMimeType: "application/json",
-      safetySettings: [
-        {
-          category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-          threshold: HarmBlockThreshold.BLOCK_NONE,
-        },
-        {
-          category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-          threshold: HarmBlockThreshold.BLOCK_NONE,
-        },
-        {
-          category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-          threshold: HarmBlockThreshold.BLOCK_NONE,
-        },
-        {
-          category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-          threshold: HarmBlockThreshold.BLOCK_NONE,
-        },
-      ],
+  const safetySettings = [
+    {
+      category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+      threshold: HarmBlockThreshold.BLOCK_NONE,
     },
-  });
+    {
+      category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+      threshold: HarmBlockThreshold.BLOCK_NONE,
+    },
+    {
+      category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+      threshold: HarmBlockThreshold.BLOCK_NONE,
+    },
+    {
+      category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+      threshold: HarmBlockThreshold.BLOCK_NONE,
+    },
+  ];
 
-  const response = await Promise.race([generatePromise, timeoutPromise]);
+  const executeCall = async () => {
+    // 1. Primary call with JSON mode and thinkingBudget: 0 for fast structured generation
+    try {
+      const response = await genAI.models.generateContent({
+        model: "gemini-3.7-flash",
+        contents: contents,
+        config: {
+          systemInstruction: systemInstruction || SYSTEM_INSTRUCTIONS,
+          responseMimeType: "application/json",
+          thinkingConfig: {
+            thinkingBudget: 0,
+          },
+          safetySettings,
+        },
+      });
+
+      // Check if valid text was produced
+      const hasText = !!(
+        (typeof response.text === 'string' && response.text.trim()) ||
+        response.candidates?.[0]?.content?.parts?.some((p: any) => p.text && p.text.trim())
+      );
+      if (hasText) {
+        return response;
+      }
+      console.warn("Primary JSON call returned empty text, attempting standard text fallback...");
+    } catch (primaryErr: any) {
+      console.warn("Primary JSON call failed, attempting standard text fallback:", primaryErr);
+    }
+
+    // 2. Resilient fallback call without responseMimeType constraint
+    const fallbackResponse = await genAI.models.generateContent({
+      model: "gemini-3.7-flash",
+      contents: contents,
+      config: {
+        systemInstruction: systemInstruction || SYSTEM_INSTRUCTIONS,
+        thinkingConfig: {
+          thinkingBudget: 0,
+        },
+        safetySettings,
+      },
+    });
+
+    return fallbackResponse;
+  };
+
+  const response = await Promise.race([executeCall(), timeoutPromise]);
   return response;
 }
 

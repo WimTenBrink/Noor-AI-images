@@ -223,7 +223,7 @@ export const FARMHOUSE_JSON = {
       },
       "BandVehicles": {
         "BandVan": "1984 Vintage Cream & Navy Volkswagen Transporter band tour van",
-        "Scooter": "Senna Bakker's sleek yellow reporter motor scooter with press helmet"
+        "Scooter": "Senna Bakker's sleek yellow motor scooter with helmet"
       },
       "GuestParking": "6 dedicated paved guest parking spaces with electric vehicle charging stations and guest signage",
       "Equipment": "Wall-mounted bike racks, hydraulic car lift, tool workbench, spare tires, motorcycle gear lockers, and heavy road cases for tour gear"

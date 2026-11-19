@@ -6,11 +6,18 @@
 
 export type PromptSectionType = 'character' | 'action' | 'environment' | 'weather' | 'lighting' | 'clothing' | 'framing' | 'style' | 'fineart' | 'other';
 
+export interface SectionOverride {
+  sectionKey: string;
+  customText: string;
+  sourceSettingValue: string;
+}
+
 export interface PromptSegment {
   id: string;
   type: PromptSectionType;
   label: string;
   characterName?: string;
+  sectionKey: string;
   text: string;
 }
 
@@ -272,6 +279,19 @@ export function classifyParagraph(paragraph: string): { type: PromptSectionType;
 }
 
 /**
+ * Computes a normalized key for a prompt section based on its type and character
+ */
+export function computeSectionKey(type: PromptSectionType, characterName?: string): string {
+  const normChar = characterName ? characterName.toLowerCase().trim() : '';
+  if (normChar) {
+    if (type === 'clothing') return `wardrobe_${normChar}`;
+    if (type === 'action') return `action_${normChar}`;
+    if (type === 'character') return `character_${normChar}`;
+  }
+  return type;
+}
+
+/**
  * Parses full prompt string into segmented, typed sections.
  * Automatically splits any merged character-and-action lines into separate sections.
  */
@@ -335,14 +355,51 @@ export function parsePromptSections(fullPrompt: string): PromptSegment[] {
 
   return rawParagraphs.map((para, index) => {
     const { type, label, characterName } = classifyParagraph(para);
+    const sectionKey = computeSectionKey(type, characterName);
     return {
       id: `section_${index}_${type}`,
       type,
       label,
       characterName,
+      sectionKey,
       text: para
     };
   });
+}
+
+/**
+ * Applies active section overrides to prompt text if the source setting has not changed.
+ */
+export function applySectionOverridesToPrompt(
+  fullPrompt: string,
+  overrides: Record<string, SectionOverride>,
+  currentSourceValues: Record<string, string>
+): string {
+  if (!fullPrompt || !fullPrompt.trim() || !overrides || Object.keys(overrides).length === 0) {
+    return fullPrompt;
+  }
+
+  const segments = parsePromptSections(fullPrompt);
+  let changed = false;
+
+  const updatedSegments = segments.map(seg => {
+    const override = overrides[seg.sectionKey];
+    if (override && override.customText && override.customText.trim()) {
+      const currentVal = currentSourceValues[seg.sectionKey];
+      // Keep override if source setting has not changed
+      if (currentVal !== undefined && currentVal === override.sourceSettingValue) {
+        changed = true;
+        return {
+          ...seg,
+          text: override.customText.trim()
+        };
+      }
+    }
+    return seg;
+  });
+
+  if (!changed) return fullPrompt;
+  return updatedSegments.map(s => s.text).join('\n');
 }
 
 /**

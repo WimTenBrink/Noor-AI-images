@@ -251,11 +251,11 @@ export const SINGER_ACTION_PRESETS: Record<string, string[]> = {
     "Sitting with long legs resting on a leather studio sofa, leaning back comfortably with a calm, serene expression."
   ],
   senna: [
-    "Standing with a sleek press microphone in hand, gesturing articulate points with a confident reporter smile.",
-    "Leaning against an urban broadcast camera rig, reviewing interview notes on her digital tablet with a focused gaze.",
-    "Sitting in a modern studio interview armchair with crossed legs, holding a sleek voice recorder with a polite curious smile.",
-    "Walking briskly along a bustling studio corridor with her leather reporter satchel, looking toward the camera with a bright smile.",
-    "Standing under studio lights holding her microphone, offering a captivating on-camera broadcast report with poise."
+    "Standing with a sleek handheld microphone in hand, gesturing with a confident warm smile.",
+    "Leaning against a camera tripod rig, reviewing notes on her digital tablet with a focused gaze.",
+    "Sitting in a modern studio armchair with crossed legs, holding a sleek recording device with a polite curious smile.",
+    "Walking briskly along a bustling studio corridor holding a leather satchel, looking toward the camera with a bright smile.",
+    "Standing under studio lights holding her handheld microphone with poised posture."
   ]
 };
 
@@ -488,9 +488,9 @@ export function generateThemedActionsForScene(
             "sitting on a wooden stool in the courtyard, watching the sunset over the pastures with a serene expression."
           ],
           senna: [
-            "standing in the farm courtyard with a press microphone, interviewing local growers with a warm, professional expression.",
-            "walking along the countryside lane holding a leather reporter clipboard, observing the fields with an inquisitive gaze.",
-            "sitting on a wooden bench near the homestead barn, reviewing news reports on her tablet with a calm, focused posture."
+            "standing in the farm courtyard holding a handheld microphone, speaking with a warm, engaging expression.",
+            "walking along the countryside lane holding a leather clipboard, observing the fields with an inquisitive gaze.",
+            "sitting on a wooden bench near the homestead barn, reviewing notes on her tablet with a calm, focused posture."
           ]
         };
         const list = farmActions[singer.id] || farmActions.miranda;
@@ -514,8 +514,8 @@ export function generateThemedActionsForScene(
             "seated on a velvet sofa with regal posture, watching the gathering with a confident, knowing smirk."
           ],
           senna: [
-            "standing on the press carpet with a sleek microphone, conducting a red-carpet broadcast report with radiant charm.",
-            "leaning gracefully against a grand marble pillar, holding a tablet while observing the gala with a keen, articulate smile."
+            "standing on the carpet holding a sleek microphone with radiant charm.",
+            "leaning gracefully against a grand marble pillar, holding a tablet while observing the gathering with an engaging smile."
           ]
         };
         const list = galaActions[singer.id] || galaActions.miranda;
@@ -546,9 +546,9 @@ export function generateThemedActionsForScene(
             `seated with serene posture in ${topic}, looking into the camera with a calm, confident smirk.`
           ],
           senna: [
-            `standing in the scene setting of ${topic}, holding a press microphone with a confident, articulate reporter expression.`,
+            `standing in the scene setting of ${topic}, holding a sleek handheld microphone with a confident, engaging expression.`,
             `seated attentively in ${topic}, reviewing notes on her digital tablet with a sharp, curious smile.`,
-            `leaning comfortably in ${topic}, looking into the camera with a bright, observant broadcast posture.`
+            `leaning comfortably in ${topic}, looking into the camera with a bright, observant posture.`
           ]
         };
         const list = genericActions[singer.id] || genericActions.miranda;
@@ -875,9 +875,7 @@ export function buildCharacterAppearanceParagraphs(
     const ageLabel = buildCharacterAgeLabel(memberAge, memberTomboy);
 
     const firstName = getFirstName(m.name);
-    const isReporter = m.id === 'senna';
-    const roleStr = includeInstruments ? `, ${m.role}` : (isReporter ? `, reporter` : `, ${m.role.toLowerCase()}`);
-    const label = `${firstName}, ${ageLabel}${roleStr}`;
+    const label = `${firstName}, ${ageLabel}`;
     
     if (sceneTypeOrRating === 'explicit' || sceneTypeOrRating === 'nsfw') {
       paragraphs.push(sanitizePromptParagraph(`${label}: ${m.Body}.`));

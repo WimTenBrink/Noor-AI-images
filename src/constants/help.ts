@@ -320,7 +320,7 @@ Noor Music is built as a highly modular React 19 application running in the Vite
 - \`/src/types\`: Domain models, enums, and interfaces for proper type safety.
 
 ## 1.1 JSON Schemas, Version History & Data Evolution (\`/src/constants/jsonSchemas.ts\`)
-The application defines six independent **Draft 07 JSON Schemas** for Song projects, Cover Art prompts, Video Segment prompts, System Logs, AI Jobs, and Lyrics Instructions.
+The application defines independent **Draft 07 JSON Schemas** for Song projects, Cover Art prompts, Video Segment prompts, System Logs, AI Jobs, Lyrics Instructions, Farmhouse tree, Wardrobes dataset, Singers Detailed, and Image Styles (\`ImageStyles.json\`).
 - **Embedded Schema Help (\`help\`)**: Each exported schema object includes an embedded \`help\` property containing its \`purpose\` and a \`versionHistory\` array tracking historical schema versions (\`v1.0.0\`, \`v1.1.0\`), release dates, and structural changes.
 - **Header Menu Help Integration**: Each JSON schema download item in \`Header.tsx\` includes a distinct **Help** button (\`helpId: 'help-schema-*'\`). Clicking this button opens a modal dialog showing the Markdown documentation for that schema's evolution.
 

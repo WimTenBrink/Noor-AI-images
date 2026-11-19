@@ -2,6 +2,7 @@ import { Job, Priority, JobStatus } from '../../types';
 import { generateSong, generateImage } from './aiService';
 import { SYSTEM_INSTRUCTIONS } from '../../constants/instructions';
 import { downloadImageFile } from '../../lib/utils';
+import { extractAndPerformDeterministicRemix } from '../../lib/remixHelper';
 
 function safeBase64TruncateReplacer(key: string, value: any): any {
   if (typeof value === 'string') {
@@ -94,7 +95,12 @@ function repairJsonString(input: string): string {
 function extractFieldsRegex(text: string): any {
   if (!text || text.length > 500000) return null;
   const result: any = {};
-  const keys = ['title', 'prompt', 'scene', 'action', 'style', 'lyrics', 'story', 'markdown', 'text', 'content', 'review', 'analysis', 'technical', 'entendres', 'giggleScale', 'interviewReview', 'imageDescription'];
+  const keys = [
+    'title', 'remixPrompt', 'remixedPrompt', 'finalPrompt', 'optimizedPrompt', 'cleanPrompt',
+    'prompt', 'summaryOfChanges', 'scene', 'action', 'style', 'lyrics', 'story', 'markdown',
+    'text', 'content', 'review', 'analysis', 'technical', 'entendres', 'giggleScale',
+    'interviewReview', 'imageDescription'
+  ];
   
   for (const key of keys) {
     const searchKey = `"${key}"`;
@@ -194,6 +200,8 @@ function cleanAndParseJSON(text: string): any {
   return {
     title: extractedTitle,
     style: extractedStyle,
+    prompt: unescapedCleaned,
+    remixPrompt: unescapedCleaned,
     lyrics: unescapedCleaned,
     story: unescapedCleaned,
     text: unescapedCleaned,
@@ -560,15 +568,88 @@ ${response.text || ''}
       }
 
       const firstCandidate = response.candidates?.[0];
-      if (firstCandidate?.finishReason === 'PROHIBITED_CONTENT') {
-        throw new Error("The AI request was blocked by Gemini's safety filters (Finish Reason: PROHIBITED_CONTENT). Even with safety settings set to 'BLOCK_NONE', certain sensitive, extreme, or unsafe topics trigger hard system-level safeguards. To prevent this, try rephrasing your prompt to use lighter, more metaphorical, or playful terms instead of graphic descriptors.");
-      }
-      if (firstCandidate?.finishReason && firstCandidate.finishReason !== 'STOP' && firstCandidate.finishReason !== 'MAX_TOKENS') {
-        throw new Error(`The AI request failed to complete normally (Finish Reason: ${firstCandidate.finishReason}). Please try a different prompt.`);
+      const isSafetyBlock = firstCandidate?.finishReason === 'PROHIBITED_CONTENT' || 
+                            firstCandidate?.finishReason === 'SAFETY' ||
+                            (response as any).promptFeedback?.blockReason;
+
+      if (isSafetyBlock) {
+        // If this is a remix job, resolve immediately with deterministic safety synthesis
+        const isRemixJob = typeof job.name === 'string' && (
+          job.name.startsWith('Remix Prompt:') || 
+          job.name.toLowerCase().includes('remix')
+        );
+        if (isRemixJob) {
+          const fallback = extractAndPerformDeterministicRemix(job.prompt);
+          if (fallback) {
+            console.warn(`Job "${job.name}" encountered safety filter (${firstCandidate?.finishReason || 'PROHIBITED_CONTENT'}). Applied safe deterministic prompt remix fallback successfully.`);
+            if (job.generationSettings) {
+              (fallback as any).settings = job.generationSettings;
+            }
+            job.result = fallback;
+            job.status = 'done';
+            return;
+          }
+        }
+        throw new Error("The AI request was blocked by Gemini's safety filters (Finish Reason: " + (firstCandidate?.finishReason || 'PROHIBITED_CONTENT') + "). Please rephrase your instructions using lighter, more descriptive visual terms.");
       }
 
-      const rawText = response.text || firstCandidate?.content?.parts?.[0]?.text || '';
-      if (!rawText) throw new Error("No text returned from AI");
+      if (firstCandidate?.finishReason && firstCandidate.finishReason !== 'STOP' && firstCandidate.finishReason !== 'MAX_TOKENS') {
+        throw new Error(`The AI request finished with unexpected status: ${firstCandidate.finishReason}. Please try modifying your instructions.`);
+      }
+
+      // Robust extraction of text from all parts across candidates
+      let rawText = '';
+      if (typeof response.text === 'string' && response.text.trim()) {
+        rawText = response.text.trim();
+      } else if (response.candidates && response.candidates.length > 0) {
+        for (const candidate of response.candidates) {
+          if (candidate.content?.parts && Array.isArray(candidate.content.parts)) {
+            // Priority 1: non-thought text parts
+            const nonThoughtParts = candidate.content.parts
+              .filter((p: any) => p.text && !p.thought)
+              .map((p: any) => p.text)
+              .join('');
+            if (nonThoughtParts.trim()) {
+              rawText = nonThoughtParts.trim();
+              break;
+            }
+            // Priority 2: any text part
+            const allTextParts = candidate.content.parts
+              .map((p: any) => p.text)
+              .filter(Boolean)
+              .join('');
+            if (allTextParts.trim()) {
+              rawText = allTextParts.trim();
+              break;
+            }
+          }
+        }
+      }
+
+      if (!rawText) {
+        const isRemixJob = typeof job.name === 'string' && (
+          job.name.startsWith('Remix Prompt:') || 
+          job.name.toLowerCase().includes('remix')
+        );
+        if (isRemixJob) {
+          const fallback = extractAndPerformDeterministicRemix(job.prompt);
+          if (fallback) {
+            if (job.generationSettings) {
+              (fallback as any).settings = job.generationSettings;
+            }
+            job.result = fallback;
+            job.status = 'done';
+            return;
+          }
+        }
+
+        const finishReason = firstCandidate?.finishReason || 'UNKNOWN';
+        const blockReason = (response as any).promptFeedback?.blockReason;
+        if (blockReason) {
+          throw new Error(`The prompt was blocked by safety policy (${blockReason}). Please rephrase your instructions.`);
+        }
+        throw new Error(`The AI returned an empty response (Finish Reason: ${finishReason}). Please verify your remix instructions or check your API key.`);
+      }
       
       const parsed = cleanAndParseJSON(rawText);
       if (parsed && typeof parsed === 'object') {

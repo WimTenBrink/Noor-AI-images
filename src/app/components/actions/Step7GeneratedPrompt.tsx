@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
-  Layers, Copy, Check, Eye, Code, Sparkles, Image as ImageIcon, RotateCw
+  Layers, Copy, Check, Eye, Code, Sparkles, Image as ImageIcon, RotateCw, Edit3, X, Save
 } from 'lucide-react';
 import { ColorCodedPrompt } from './ColorCodedPrompt';
+import { SectionOverride } from '../../../lib/promptColorizer';
 
 interface Step7GeneratedPromptProps {
   generatedPrompt: string;
@@ -11,6 +12,7 @@ interface Step7GeneratedPromptProps {
   loadingImage?: boolean;
   onGoToImage?: () => void;
   hasGeneratedImage?: boolean;
+  onGoToRemix?: () => void;
   copiedPrompt: boolean;
   onCopyPrompt: () => void;
   promptViewMode: 'color' | 'raw';
@@ -22,6 +24,10 @@ interface Step7GeneratedPromptProps {
   onToggleSegment?: (segmentId: string, enabled: boolean) => void;
   onCopyFilteredPrompt?: () => void;
   copiedFilteredPrompt?: boolean;
+  onChangePromptText?: (newPrompt: string) => void;
+  sectionOverrides?: Record<string, SectionOverride>;
+  onSaveSectionOverride?: (sectionKey: string, customText: string) => void;
+  onResetSectionOverride?: (sectionKey: string) => void;
 }
 
 export const Step7GeneratedPrompt: React.FC<Step7GeneratedPromptProps> = ({
@@ -31,6 +37,7 @@ export const Step7GeneratedPrompt: React.FC<Step7GeneratedPromptProps> = ({
   loadingImage = false,
   onGoToImage,
   hasGeneratedImage = false,
+  onGoToRemix,
   copiedPrompt,
   onCopyPrompt,
   promptViewMode,
@@ -41,8 +48,32 @@ export const Step7GeneratedPrompt: React.FC<Step7GeneratedPromptProps> = ({
   enabledSegmentIds,
   onToggleSegment,
   onCopyFilteredPrompt,
-  copiedFilteredPrompt = false
+  copiedFilteredPrompt = false,
+  onChangePromptText,
+  sectionOverrides,
+  onSaveSectionOverride,
+  onResetSectionOverride
 }) => {
+  const [isEditingRaw, setIsEditingRaw] = useState(false);
+  const [rawDraft, setRawDraft] = useState('');
+
+  const handleStartRawEdit = () => {
+    setRawDraft(generatedPrompt);
+    setIsEditingRaw(true);
+  };
+
+  const handleCancelRawEdit = () => {
+    setIsEditingRaw(false);
+    setRawDraft('');
+  };
+
+  const handleSaveRawEdit = () => {
+    if (onChangePromptText) {
+      onChangePromptText(rawDraft.trim());
+    }
+    setIsEditingRaw(false);
+  };
+
   return (
     <div className="flex-1 flex flex-col min-h-0 h-full">
       {/* COMPACT CONTROLS BAR: TITLE, VIEW MODE TOGGLES, GENERATE SCENE IMAGE, AND COPY FILTERED */}
@@ -95,7 +126,7 @@ export const Step7GeneratedPrompt: React.FC<Step7GeneratedPromptProps> = ({
             onClick={onGeneratePrompts}
             disabled={loadingPrompt}
             className="px-2.5 py-1 text-xs font-semibold bg-purple-900/50 hover:bg-purple-800/70 text-purple-200 border border-purple-500/40 rounded-md flex items-center gap-1.5 transition-all shadow-xs cursor-pointer active:scale-95 disabled:opacity-50"
-            title="Regenerate prompt with all current settings and character actions"
+            title="Regenerate prompt with current settings (preserves customized section edits until their specific settings change)"
           >
             {loadingPrompt ? (
               <RotateCw size={12} className="animate-spin text-purple-300" />
@@ -141,6 +172,19 @@ export const Step7GeneratedPrompt: React.FC<Step7GeneratedPromptProps> = ({
             </button>
           )}
 
+          {/* REMIX PROMPT BUTTON */}
+          {generatedPrompt && onGoToRemix && (
+            <button
+              type="button"
+              onClick={onGoToRemix}
+              className="px-2.5 py-1 text-xs font-semibold bg-purple-950/60 hover:bg-purple-900/80 text-purple-200 border border-purple-500/50 rounded-md flex items-center gap-1 transition-all shadow-xs cursor-pointer active:scale-95"
+              title="Open Remix Studio to refine and command prompt variations"
+            >
+              <Sparkles size={12} className="text-purple-300" />
+              <span>Remix</span>
+            </button>
+          )}
+
           {/* COPY FILTERED BUTTON */}
           {generatedPrompt && onCopyFilteredPrompt && (
             <button
@@ -176,31 +220,75 @@ export const Step7GeneratedPrompt: React.FC<Step7GeneratedPromptProps> = ({
                 copiedMap={copiedMap}
                 enabledSegmentIds={enabledSegmentIds}
                 onToggleSegment={onToggleSegment}
+                onChangePromptText={onChangePromptText}
+                sectionOverrides={sectionOverrides}
+                onSaveSectionOverride={onSaveSectionOverride}
+                onResetSectionOverride={onResetSectionOverride}
                 showFilterToolbar={true}
               />
             </div>
           ) : (
-            <div className="relative flex-1 min-h-0 flex flex-col">
+            <div className="relative flex-1 min-h-0 flex flex-col gap-2">
+              <div className="flex items-center justify-between px-1">
+                <span className="text-[11px] text-lavender-text/70">
+                  {isEditingRaw ? 'Editing raw master prompt:' : 'Raw prompt text (multi-line):'}
+                </span>
+                <div className="flex items-center gap-1.5">
+                  {!isEditingRaw ? (
+                    <button
+                      type="button"
+                      onClick={handleStartRawEdit}
+                      className="px-2 py-0.5 text-xs text-lavender-accent hover:text-white bg-lavender-surface hover:bg-lavender-border border border-lavender-border/60 rounded flex items-center gap-1 transition-colors cursor-pointer"
+                    >
+                      <Edit3 size={11} />
+                      <span>Edit Raw Text</span>
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={handleCancelRawEdit}
+                        className="px-2 py-0.5 text-xs text-rose-300 hover:text-white bg-rose-950/40 hover:bg-rose-900/60 border border-rose-500/40 rounded flex items-center gap-1 transition-colors cursor-pointer"
+                      >
+                        <X size={11} />
+                        <span>Cancel</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleSaveRawEdit}
+                        className="px-2.5 py-0.5 text-xs font-semibold text-emerald-200 bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/60 rounded flex items-center gap-1 transition-colors cursor-pointer shadow-xs"
+                      >
+                        <Save size={11} />
+                        <span>Save Prompt</span>
+                      </button>
+                    </>
+                  )}
+                  <button
+                    type="button"
+                    onClick={onCopyPrompt}
+                    className="p-1 text-lavender-text hover:text-lavender-accent bg-lavender-surface/90 hover:bg-lavender-border border border-lavender-border/70 rounded transition-colors cursor-pointer"
+                    title="Copy raw text to clipboard"
+                  >
+                    {copiedPrompt ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
+                  </button>
+                </div>
+              </div>
+
               <textarea
-                readOnly
-                value={generatedPrompt}
-                className="w-full flex-1 min-h-0 bg-lavender-bg border border-lavender-border rounded-lg p-3 text-xs md:text-sm font-mono text-lavender-text leading-relaxed resize-none focus:outline-none pr-10 overflow-y-auto"
+                readOnly={!isEditingRaw}
+                value={isEditingRaw ? rawDraft : generatedPrompt}
+                onChange={isEditingRaw ? (e) => setRawDraft(e.target.value) : undefined}
+                className={`w-full flex-1 min-h-0 bg-lavender-bg border ${
+                  isEditingRaw ? 'border-lavender-accent focus:ring-1 focus:ring-lavender-accent' : 'border-lavender-border'
+                } rounded-lg p-3 text-xs md:text-sm font-mono text-lavender-text leading-relaxed resize-none focus:outline-none overflow-y-auto`}
               />
-              <button
-                type="button"
-                onClick={onCopyPrompt}
-                className="absolute right-3 top-3 p-1.5 bg-lavender-surface/90 hover:bg-lavender-border text-lavender-text hover:text-lavender-accent border border-lavender-border/70 rounded-md transition-colors cursor-pointer shadow-sm"
-                title="Copy raw text to clipboard"
-              >
-                {copiedPrompt ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
-              </button>
             </div>
           )
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-lavender-bg/40 rounded-lg border border-dashed border-lavender-border/50 text-lavender-text/60 space-y-3">
             <Sparkles size={28} className="mx-auto text-lavender-accent/60 animate-pulse" />
             <p className="text-xs max-w-md mx-auto">
-              No prompt has been generated yet. Return to Step 7 to configure your style, or click below to compile immediately.
+              No prompt has been generated yet. Return to Step 8 to configure your style, or click below to compile immediately.
             </p>
             <button
               type="button"

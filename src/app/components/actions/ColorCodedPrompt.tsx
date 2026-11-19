@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { 
-  User, Activity, Trees, CloudSun, SunMedium, Shirt, Scan, Sparkles, ShieldAlert, Copy, Check, Info, Eye, EyeOff, Edit2, X, CheckSquare, Square
+  User, Activity, Trees, CloudSun, SunMedium, Shirt, Scan, Sparkles, ShieldAlert, Copy, Check, Info, Eye, EyeOff, Edit2, X, CheckSquare, Square, RotateCcw
 } from 'lucide-react';
 import { 
   PromptSegment, 
   parsePromptSections, 
   tokenizePromptText,
   PromptSectionType,
-  filterPromptBySegmentIds 
+  filterPromptBySegmentIds,
+  SectionOverride
 } from '../../../lib/promptColorizer';
 
 interface ColorCodedPromptProps {
@@ -17,6 +18,9 @@ interface ColorCodedPromptProps {
   enabledSegmentIds?: Record<string, boolean>;
   onToggleSegment?: (segmentId: string, enabled: boolean) => void;
   onChangePromptText?: (newPromptText: string) => void;
+  sectionOverrides?: Record<string, SectionOverride>;
+  onSaveSectionOverride?: (sectionKey: string, customText: string) => void;
+  onResetSectionOverride?: (sectionKey: string) => void;
   showFilterToolbar?: boolean;
 }
 
@@ -27,6 +31,9 @@ export const ColorCodedPrompt: React.FC<ColorCodedPromptProps> = ({
   enabledSegmentIds: externalEnabledSegmentIds,
   onToggleSegment: externalOnToggleSegment,
   onChangePromptText,
+  sectionOverrides,
+  onSaveSectionOverride,
+  onResetSectionOverride,
   showFilterToolbar = true
 }) => {
   const [highlightTokens, setHighlightTokens] = useState(true);
@@ -82,23 +89,28 @@ export const ColorCodedPrompt: React.FC<ColorCodedPromptProps> = ({
   };
 
   const handleSaveEdit = (idx: number) => {
-    if (!onChangePromptText) {
-      setEditingIndex(null);
-      return;
-    }
-    const updatedSegments = [...segments];
+    const seg = segments[idx];
     const trimmed = editingDraft.trim();
-    if (trimmed) {
-      updatedSegments[idx] = {
-        ...updatedSegments[idx],
-        text: trimmed
-      };
-    } else {
-      // Remove empty segment
-      updatedSegments.splice(idx, 1);
+
+    if (onSaveSectionOverride && seg?.sectionKey) {
+      onSaveSectionOverride(seg.sectionKey, trimmed);
     }
-    const newFullPrompt = updatedSegments.map(s => s.text).filter(Boolean).join('\n');
-    onChangePromptText(newFullPrompt);
+
+    if (onChangePromptText) {
+      const updatedSegments = [...segments];
+      if (trimmed) {
+        updatedSegments[idx] = {
+          ...updatedSegments[idx],
+          text: trimmed
+        };
+      } else {
+        // Remove empty segment
+        updatedSegments.splice(idx, 1);
+      }
+      const newFullPrompt = updatedSegments.map(s => s.text).filter(Boolean).join('\n');
+      onChangePromptText(newFullPrompt);
+    }
+
     setEditingIndex(null);
     setEditingDraft('');
   };
@@ -344,6 +356,17 @@ export const ColorCodedPrompt: React.FC<ColorCodedPromptProps> = ({
                     </span>
                   </label>
 
+                  {/* CUSTOM EDIT INDICATOR BADGE */}
+                  {sectionOverrides && seg.sectionKey && sectionOverrides[seg.sectionKey] && !isEditing && (
+                    <span 
+                      className="px-1.5 py-0.5 text-[10px] font-bold bg-amber-950/60 text-amber-300 border border-amber-500/50 rounded flex items-center gap-1 shadow-xs"
+                      title="This section has custom edits that stay active until its source setting is changed on its dedicated page."
+                    >
+                      <Sparkles size={10} className="text-amber-400" />
+                      Edited (Kept)
+                    </span>
+                  )}
+
                   {!isEnabled && !isEditing && (
                     <span className="text-[10px] text-lavender-text/50 font-medium italic">
                       (Excluded from copied prompt)
@@ -352,6 +375,18 @@ export const ColorCodedPrompt: React.FC<ColorCodedPromptProps> = ({
                 </div>
 
                 <div className="flex items-center gap-1.5">
+                  {/* RESET SECTION OVERRIDE BUTTON IF EDITED */}
+                  {sectionOverrides && seg.sectionKey && sectionOverrides[seg.sectionKey] && !isEditing && onResetSectionOverride && (
+                    <button
+                      onClick={() => onResetSectionOverride(seg.sectionKey)}
+                      className="px-1.5 py-0.5 text-[10px] font-semibold text-amber-300 hover:text-amber-100 bg-amber-950/40 hover:bg-amber-900/60 border border-amber-500/40 rounded flex items-center gap-1 transition-colors cursor-pointer"
+                      title="Revert custom edits for this section back to standard setting"
+                    >
+                      <RotateCcw size={10} className="text-amber-400" />
+                      <span>Revert</span>
+                    </button>
+                  )}
+
                   {/* EDIT SECTION BUTTON */}
                   {!isEditing && (
                     <button

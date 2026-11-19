@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Dialog } from './Dialog';
 import { ImageView } from './ImageView';
 import { SINGERS_DETAILED } from '../../constants/singersDetailed';
@@ -61,15 +61,28 @@ import {
 } from '../../constants/promptRating';
 import { 
   filterPromptStringBySegmentIds,
-  parsePromptSections
+  parsePromptSections,
+  SectionOverride,
+  applySectionOverridesToPrompt
 } from '../../lib/promptColorizer';
 import { 
   buildCombinedSceneDescription,
   removeSceneLabels,
   formatFluidSceneText
 } from '../../lib/sceneDescriptionHelper';
+import { 
+  loadRemixHistory, 
+  saveRemixHistory, 
+  addRemixToHistory, 
+  clearRemixHistory, 
+  stripLineBreaksForCopy, 
+  formatFilteredPromptWithLineBreaks,
+  optimizePromptForWanAi
+} from '../../lib/remixHelper';
+import { SYSTEM_INSTRUCTIONS_REMIX_PROMPT } from '../../constants/instructions';
+import { GENERATE_REMIX_PROMPT } from '../../constants/prompts';
 
-// Import our 9 discrete step components
+// Import our 10 discrete step components
 import { Step1Characters } from './actions/Step1Characters';
 import { Step2Scene } from './actions/Step2Scene';
 import { Step3Theme } from './actions/Step3Theme';
@@ -78,7 +91,9 @@ import { Step4CharacterDetails } from './actions/Step4CharacterDetails';
 import { Step5Actions } from './actions/Step5Actions';
 import { Step6StyleAndGeneration } from './actions/Step6StyleAndGeneration';
 import { Step7GeneratedPrompt } from './actions/Step7GeneratedPrompt';
+import { Step9Remix } from './actions/Step9Remix';
 import { Step8Image } from './actions/Step8Image';
+import { Shuffle } from 'lucide-react';
 
 const WIZARD_PAGE_KEY = 'noor_action_wizard_page_v4';
 const ACTIONS_STORAGE_KEY = 'noor_singer_actions_v2';
@@ -107,6 +122,7 @@ const ACTION_GROUP_STORAGE_KEY = 'noor_action_group_v2';
 const PROMPT_VIEW_MODE_STORAGE_KEY = 'noor_prompt_view_mode_v2';
 const ENABLED_SEGMENTS_STORAGE_KEY = 'noor_enabled_segments_v2';
 const GENERATED_IMAGE_STORAGE_KEY = 'noor_generated_scene_image_v2';
+const SECTION_OVERRIDES_STORAGE_KEY = 'noor_prompt_section_overrides_v1';
 
 const DEFAULT_MAIN_SCENE = 'Relaxing together at the Abcoude homestead farm near sunset, enjoying the peaceful countryside atmosphere after a song rehearsal.';
 
@@ -150,7 +166,7 @@ const DEFAULT_CHARACTER_TOMBOYS: Record<string, boolean> = {
   senna: true
 };
 
-export type WizardStep = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+export type WizardStep = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
 
 interface MainPanelProps {
   targetStep?: number | null;
@@ -167,11 +183,11 @@ export const MainPanel: React.FC<MainPanelProps> = ({
 }) => {
   const { addJob, jobs } = useJobQueue();
 
-  // Wizard current page (1-9)
+  // Wizard current page (1-10)
   const [currentPage, setCurrentPage] = useState<WizardStep>(() => {
     const saved = localStorage.getItem(WIZARD_PAGE_KEY);
     const num = Number(saved);
-    if (num >= 1 && num <= 9) return num as WizardStep;
+    if (num >= 1 && num <= 10) return num as WizardStep;
     return 1;
   });
 
@@ -315,13 +331,40 @@ export const MainPanel: React.FC<MainPanelProps> = ({
     return {};
   });
 
+  // Persistent section edits on Prompt page (Step 8)
+  const [sectionOverrides, setSectionOverrides] = useState<Record<string, SectionOverride>>(() => {
+    try {
+      const saved = localStorage.getItem(SECTION_OVERRIDES_STORAGE_KEY);
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return {};
+  });
+
+  // Persist section overrides
+  useEffect(() => {
+    try {
+      localStorage.setItem(SECTION_OVERRIDES_STORAGE_KEY, JSON.stringify(sectionOverrides));
+    } catch {}
+  }, [sectionOverrides]);
+
+  // Remix Prompts History (Last 10 stored separately in local storage)
+  const [remixHistory, setRemixHistory] = useState<string[]>(() => loadRemixHistory());
+  const [activeRemixIndex, setActiveRemixIndex] = useState<number | null>(0);
+
+  // Persist remix history
+  useEffect(() => {
+    saveRemixHistory(remixHistory);
+  }, [remixHistory]);
+
   // Loading & async Job tracking
   const [loadingJobs, setLoadingJobs] = useState<{
     scene: boolean;
     prompt: boolean;
+    remix: boolean;
   }>({
     scene: false,
-    prompt: false
+    prompt: false,
+    remix: false
   });
   const [generatingImage, setGeneratingImage] = useState<boolean>(false);
 
@@ -330,11 +373,13 @@ export const MainPanel: React.FC<MainPanelProps> = ({
     sceneJobId?: string;
     promptJobId?: string;
     imageJobId?: string;
+    remixJobId?: string;
   }>({});
 
   // Feedback states
   const [copiedMap, setCopiedMap] = useState<Record<string, boolean>>({});
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [remixError, setRemixError] = useState<string | null>(null);
   const [generatedSceneImage, setGeneratedSceneImage] = useState<{
     src: string;
     title: string;
@@ -349,11 +394,22 @@ export const MainPanel: React.FC<MainPanelProps> = ({
 
   // Sync external navigation triggers
   useEffect(() => {
-    if (targetStep && targetStep >= 1 && targetStep <= 9) {
+    if (targetStep && targetStep >= 1 && targetStep <= 10) {
+      if (targetStep === 9) {
+        const fullPrompt = generatedScene?.prompt || generatedScene?.basePrompt || '';
+        const formattedFiltered = formatFilteredPromptWithLineBreaks(fullPrompt, enabledSegmentIds) || fullPrompt;
+        if (formattedFiltered && formattedFiltered.trim().length > 0) {
+          setRemixHistory(prev => {
+            if (prev.length > 0 && prev[0] === formattedFiltered) return prev;
+            return addRemixToHistory(prev, formattedFiltered);
+          });
+          setActiveRemixIndex(0);
+        }
+      }
       setCurrentPage(targetStep as WizardStep);
       if (onStepChanged) onStepChanged();
     }
-  }, [targetStep, onStepChanged]);
+  }, [targetStep, onStepChanged, generatedScene?.prompt, generatedScene?.basePrompt, enabledSegmentIds]);
 
   // Sync external reset trigger
   useEffect(() => {
@@ -522,6 +578,8 @@ export const MainPanel: React.FC<MainPanelProps> = ({
           if (rawPrompt) {
             const isAdultRating = selectedPromptRating === 'nsfw' || selectedPromptRating === 'explicit';
             let promptStr = isAdultRating ? stripClothingFromText(sanitizePromptText(rawPrompt)) : sanitizePromptText(rawPrompt);
+            const currentSources = getCurrentSourceValues();
+            const finalPromptWithOverrides = applySectionOverridesToPrompt(promptStr, sectionOverrides, currentSources);
             const finalTitle = rawTitle ? sanitizePromptText(rawTitle) : undefined;
             setGeneratedScene(prev => {
               if (!prev) return prev;
@@ -529,15 +587,15 @@ export const MainPanel: React.FC<MainPanelProps> = ({
                 ...prev,
                 title: finalTitle || prev.title,
                 rating: selectedPromptRating,
-                prompt: promptStr,
-                basePrompt: promptStr,
-                standardPrompt: promptStr,
-                standardPrompt1: promptStr,
-                standardPrompt2: promptStr,
-                standardPrompt3: promptStr,
-                standardPrompts: [promptStr, promptStr, promptStr],
-                nsfwPrompt: promptStr,
-                explicitPrompt: promptStr
+                prompt: finalPromptWithOverrides,
+                basePrompt: finalPromptWithOverrides,
+                standardPrompt: finalPromptWithOverrides,
+                standardPrompt1: finalPromptWithOverrides,
+                standardPrompt2: finalPromptWithOverrides,
+                standardPrompt3: finalPromptWithOverrides,
+                standardPrompts: [finalPromptWithOverrides, finalPromptWithOverrides, finalPromptWithOverrides],
+                nsfwPrompt: finalPromptWithOverrides,
+                explicitPrompt: finalPromptWithOverrides
               };
             });
           }
@@ -582,7 +640,7 @@ export const MainPanel: React.FC<MainPanelProps> = ({
                 title: sceneTitle,
                 prompt: finalPrompt
               });
-              setCurrentPage(9);
+              setCurrentPage(10);
             }
           } catch (e) {
             console.error('Error parsing image result:', e);
@@ -592,7 +650,68 @@ export const MainPanel: React.FC<MainPanelProps> = ({
         pendingJobsRef.current.imageJobId = undefined;
       }
     }
-  }, [jobs, selectedPromptRating, generatedScene?.title, generatedScene?.prompt, generatedScene?.basePrompt]);
+
+    // 4. Remix Prompt Generation Job
+    if (pendingJobsRef.current.remixJobId) {
+      const rId = pendingJobsRef.current.remixJobId;
+      const job = jobs.find(j => j.id === rId);
+      if (job && (job.status === 'done' || job.status === 'failed')) {
+        if (job.status === 'done' && job.result) {
+          try {
+            let extractedRemix = '';
+            if (typeof job.result === 'string') {
+              try {
+                const parsed = JSON.parse(job.result);
+                extractedRemix = parsed.remixPrompt || parsed.remixedPrompt || parsed.finalPrompt || parsed.optimizedPrompt || parsed.cleanPrompt || parsed.prompt || parsed.mainScene || job.result;
+              } catch {
+                const match = job.result.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+                if (match) {
+                  try {
+                    const parsed = JSON.parse(match[1]);
+                    extractedRemix = parsed.remixPrompt || parsed.remixedPrompt || parsed.finalPrompt || parsed.optimizedPrompt || parsed.cleanPrompt || parsed.prompt || match[1];
+                  } catch {
+                    extractedRemix = job.result;
+                  }
+                } else {
+                  extractedRemix = job.result;
+                }
+              }
+            } else if (typeof job.result === 'object' && job.result) {
+              const resObj = job.result as any;
+              extractedRemix = resObj.remixPrompt || resObj.remixedPrompt || resObj.finalPrompt || resObj.optimizedPrompt || resObj.cleanPrompt || resObj.prompt || resObj.mainScene || (typeof resObj.text === 'string' ? resObj.text : '') || JSON.stringify(job.result);
+            }
+            if (extractedRemix) {
+              const cleaned = optimizePromptForWanAi(sanitizePromptText(extractedRemix));
+              setRemixHistory(prev => addRemixToHistory(prev, cleaned));
+              setActiveRemixIndex(0);
+              setRemixError(null);
+
+              // Keep generatedScene in sync so prompt viewers and downstream image generation immediately use the new prompt
+              setGeneratedScene(prev => {
+                if (prev) {
+                  const newTitle = (typeof job.result === 'object' && (job.result as any)?.title) ? (job.result as any).title : prev.title;
+                  return {
+                    ...prev,
+                    title: newTitle,
+                    prompt: cleaned
+                  };
+                }
+                return null;
+              });
+            }
+          } catch (e) {
+            console.error('Error handling remix job result:', e);
+          }
+        } else if (job.status === 'failed') {
+          const errMsg = job.error || 'Remix AI generation encountered an error. Please check your instructions or API key.';
+          setErrorMessage(errMsg);
+          setRemixError(errMsg);
+        }
+        setLoadingJobs(prev => ({ ...prev, remix: false }));
+        pendingJobsRef.current.remixJobId = undefined;
+      }
+    }
+  }, [jobs, selectedPromptRating, generatedScene?.title, generatedScene?.prompt, generatedScene?.basePrompt, remixHistory]);
 
   // Locations for active adventure
   const adventureLocations = getLocationsForAdventure(selectedAdventure);
@@ -688,6 +807,166 @@ CRITICAL RULES:
     pendingJobsRef.current.sceneJobId = jobId;
   };
 
+  // Helper to retrieve current source settings snapshot for all sections
+  const getCurrentSourceValues = useCallback((): Record<string, string> => {
+    return {
+      wardrobe_miranda: wardrobes.miranda || 'none',
+      wardrobe_annelies: wardrobes.annelies || 'none',
+      wardrobe_fannie: wardrobes.fannie || 'none',
+      wardrobe_emma: wardrobes.emma || 'none',
+      wardrobe_senna: wardrobes.senna || 'none',
+      action_miranda: actions.miranda || '',
+      action_annelies: actions.annelies || '',
+      action_fannie: actions.fannie || '',
+      action_emma: actions.emma || '',
+      action_senna: actions.senna || '',
+      character_miranda: `${characterAges.miranda || DEFAULT_CHARACTER_AGE}_${characterTomboys.miranda ?? DEFAULT_IS_TOMBOY}_${selectedPromptRating}`,
+      character_annelies: `${characterAges.annelies || DEFAULT_CHARACTER_AGE}_${characterTomboys.annelies ?? DEFAULT_IS_TOMBOY}_${selectedPromptRating}`,
+      character_fannie: `${characterAges.fannie || DEFAULT_CHARACTER_AGE}_${characterTomboys.fannie ?? DEFAULT_IS_TOMBOY}_${selectedPromptRating}`,
+      character_emma: `${characterAges.emma || DEFAULT_CHARACTER_AGE}_${characterTomboys.emma ?? DEFAULT_IS_TOMBOY}_${selectedPromptRating}`,
+      character_senna: `${characterAges.senna || DEFAULT_CHARACTER_AGE}_${characterTomboys.senna ?? DEFAULT_IS_TOMBOY}_${selectedPromptRating}`,
+      lighting: `${selectedLightGroup}_${selectedLight}`,
+      weather: `${selectedWeather}`,
+      environment: `${selectedAdventure}_${selectedLocation}_${selectedPredefinedScene}_${mainSceneText}_${selectedMoodGroup}_${selectedMood}_${includeInstruments}`,
+      framing: `${selectedCharacterFraming}`,
+      style: `${selectedStyleCategory}_${selectedImageStyle}_${selectedPromptRating}`,
+      fineart: `${selectedPromptRating}`,
+      other: ''
+    };
+  }, [
+    wardrobes,
+    actions,
+    characterAges,
+    characterTomboys,
+    selectedPromptRating,
+    selectedLightGroup,
+    selectedLight,
+    selectedWeather,
+    selectedAdventure,
+    selectedLocation,
+    selectedPredefinedScene,
+    mainSceneText,
+    selectedMoodGroup,
+    selectedMood,
+    includeInstruments,
+    selectedCharacterFraming,
+    selectedStyleCategory,
+    selectedImageStyle
+  ]);
+
+  // Persist single section edit on Prompt page
+  const handleSaveSectionOverride = useCallback((sectionKey: string, customText: string) => {
+    const currentSources = getCurrentSourceValues();
+    const sourceVal = currentSources[sectionKey] || '';
+    setSectionOverrides(prev => {
+      const updated = {
+        ...prev,
+        [sectionKey]: {
+          sectionKey,
+          customText,
+          sourceSettingValue: sourceVal
+        }
+      };
+      try {
+        localStorage.setItem(SECTION_OVERRIDES_STORAGE_KEY, JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+  }, [getCurrentSourceValues]);
+
+  // Reset a specific section back to default setting
+  const handleResetSectionOverride = useCallback((sectionKey: string) => {
+    let nextOverrides: Record<string, SectionOverride> = {};
+    setSectionOverrides(prev => {
+      const updated = { ...prev };
+      delete updated[sectionKey];
+      nextOverrides = updated;
+      try {
+        localStorage.setItem(SECTION_OVERRIDES_STORAGE_KEY, JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+
+    const locObj = findLocationInAllAdventures(selectedLocation) || LOCATION_OPTIONS.find(l => l.id === selectedLocation);
+    const baseline = generateScenePrompts(
+      actions, 
+      wardrobes, 
+      enabledChars, 
+      mainSceneText, 
+      locObj?.id, 
+      selectedWeather, 
+      selectedMood, 
+      includeInstruments, 
+      selectedImageStyle,
+      selectedLight,
+      selectedLightGroup,
+      selectedMoodGroup,
+      selectedCharacterFraming,
+      characterAges,
+      characterTomboys,
+      selectedPromptRating
+    );
+
+    if (baseline) {
+      const currentSources = getCurrentSourceValues();
+      const mergedPrompt = applySectionOverridesToPrompt(baseline.prompt, nextOverrides, currentSources);
+      setGeneratedScene({
+        ...baseline,
+        prompt: mergedPrompt,
+        basePrompt: mergedPrompt
+      });
+    }
+  }, [
+    actions, 
+    wardrobes, 
+    enabledChars, 
+    mainSceneText, 
+    selectedLocation, 
+    selectedWeather, 
+    selectedMood, 
+    includeInstruments, 
+    selectedImageStyle,
+    selectedLight,
+    selectedLightGroup,
+    selectedMoodGroup,
+    selectedCharacterFraming,
+    characterAges,
+    characterTomboys,
+    selectedPromptRating,
+    getCurrentSourceValues
+  ]);
+
+  // Save changes from full prompt text edit / raw editor
+  const handleChangePromptText = useCallback((newPrompt: string) => {
+    setGeneratedScene(prev => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        prompt: newPrompt,
+        basePrompt: newPrompt
+      };
+    });
+
+    const currentSources = getCurrentSourceValues();
+    const segments = parsePromptSections(newPrompt);
+    setSectionOverrides(prev => {
+      const nextOverrides = { ...prev };
+      segments.forEach(seg => {
+        if (seg.sectionKey) {
+          nextOverrides[seg.sectionKey] = {
+            sectionKey: seg.sectionKey,
+            customText: seg.text,
+            sourceSettingValue: currentSources[seg.sectionKey] || ''
+          };
+        }
+      });
+      try {
+        localStorage.setItem(SECTION_OVERRIDES_STORAGE_KEY, JSON.stringify(nextOverrides));
+      } catch {}
+      return nextOverrides;
+    });
+  }, [getCurrentSourceValues]);
+
   // Compile Scene Prompts (Step 7/8)
   const handleGeneratePrompts = () => {
     const activeCount = Object.entries(enabledChars).filter(([id, enabled]) => enabled && actions[id]?.trim().length >= 3).length;
@@ -719,7 +998,13 @@ CRITICAL RULES:
     );
 
     if (baseline) {
-      setGeneratedScene(baseline);
+      const currentSources = getCurrentSourceValues();
+      const mergedPrompt = applySectionOverridesToPrompt(baseline.prompt, sectionOverrides, currentSources);
+      setGeneratedScene({
+        ...baseline,
+        prompt: mergedPrompt,
+        basePrompt: mergedPrompt
+      });
     }
 
     const weatherObj = getWeatherById(selectedWeather);
@@ -816,14 +1101,19 @@ CRITICAL RULES:
     setWardrobes({ ...DEFAULT_WARDROBES });
     setCharacterAges({ ...DEFAULT_CHARACTER_AGES });
     setCharacterTomboys({ ...DEFAULT_CHARACTER_TOMBOYS });
+    setSectionOverrides({});
     setGeneratedScene(null);
     setGeneratedSceneImage(null);
+    clearRemixHistory();
+    setRemixHistory([]);
+    setActiveRemixIndex(0);
     setCurrentPage(1);
     setErrorMessage(null);
 
     localStorage.removeItem(SCENE_STORAGE_KEY);
     localStorage.removeItem(SCENE_LOCKED_STORAGE_KEY);
     localStorage.removeItem(GENERATED_IMAGE_STORAGE_KEY);
+    localStorage.removeItem(SECTION_OVERRIDES_STORAGE_KEY);
   };
 
   // Download JSON
@@ -870,7 +1160,7 @@ CRITICAL RULES:
     if (!promptToUse) return;
 
     setGeneratingImage(true);
-    setCurrentPage(9); // Navigate to Image page immediately
+    setCurrentPage(10); // Navigate to Image page immediately
     const jobTitle = `Generate Scene Image: ${generatedScene?.title || 'Action Scene'}`;
 
     const jobId = addJob({
@@ -882,7 +1172,100 @@ CRITICAL RULES:
     pendingJobsRef.current.imageJobId = jobId;
   };
 
-  // 9 Compact Wizard Steps: Characters, Scene, Theme, Wardrobe, Rating, Action, Style, Prompt, Image
+  // Generate Remix Prompt with Gemini
+  const handleGenerateRemixPrompt = (remixInstructions: string, basePrompt: string) => {
+    if (!basePrompt || !remixInstructions) return;
+    setErrorMessage(null);
+    setRemixError(null);
+    setLoadingJobs(prev => ({ ...prev, remix: true }));
+    const promptPayload = GENERATE_REMIX_PROMPT(
+      basePrompt,
+      remixInstructions,
+      generatedScene?.title
+    );
+    const jobId = addJob({
+      name: `Remix Prompt: ${remixInstructions.slice(0, 32)}...`,
+      priority: 'high',
+      prompt: promptPayload,
+      systemInstruction: SYSTEM_INSTRUCTIONS_REMIX_PROMPT
+    });
+    pendingJobsRef.current.remixJobId = jobId;
+  };
+
+  // Change style within Remix Studio and immediately trigger Remix Job
+  const handleRemixStyleChange = (newStyleId: string) => {
+    setSelectedImageStyle(newStyleId);
+    const styleObj = getImageStyleById(newStyleId);
+    const activePromptText = remixHistory[activeRemixIndex ?? 0] || 
+      formatFilteredPromptWithLineBreaks(
+        filterPromptStringBySegmentIds(
+          generatedScene?.prompt || generatedScene?.basePrompt || '',
+          enabledSegmentIds
+        ) || generatedScene?.prompt || generatedScene?.basePrompt || ''
+      );
+
+    if (!activePromptText) return;
+    const styleInstructions = `Change visual art style and rendering medium to ${styleObj.label}: ${styleObj.promptModifier || styleObj.description}`;
+    handleGenerateRemixPrompt(styleInstructions, activePromptText);
+  };
+
+  const handleRemixStyleCategoryChange = (newCategory: string) => {
+    setSelectedStyleCategory(newCategory);
+    const inCat = getStylesByCategory(newCategory as ImageStyleCategory);
+    if (inCat.length > 0 && !inCat.some(s => s.id === selectedImageStyle)) {
+      handleRemixStyleChange(inCat[0].id);
+    }
+  };
+
+  // Save manual edits to remix prompt
+  const handleSaveManualRemixPrompt = (editedPrompt: string) => {
+    const updated = addRemixToHistory(remixHistory, editedPrompt);
+    setRemixHistory(updated);
+    setActiveRemixIndex(0);
+  };
+
+  // Generate Remix Image
+  const handleGenerateRemixImage = (promptToRender: string) => {
+    const cleanSingleLine = stripLineBreaksForCopy(promptToRender);
+    if (!cleanSingleLine) return;
+    setGeneratingImage(true);
+    setCurrentPage(10);
+    const jobTitle = `Generate Remix Scene Image: ${generatedScene?.title || 'Remixed Scene'}`;
+    const jobId = addJob({
+      name: jobTitle,
+      priority: 'high',
+      isImageJob: true,
+      prompt: cleanSingleLine
+    });
+    pendingJobsRef.current.imageJobId = jobId;
+  };
+
+  // Open Remix Studio with the currently filtered prompt copied and set as active slot 0
+  const handleGoToRemix = useCallback(() => {
+    const fullPrompt = generatedScene?.prompt || generatedScene?.basePrompt || '';
+    const formattedFiltered = formatFilteredPromptWithLineBreaks(fullPrompt, enabledSegmentIds) || fullPrompt;
+
+    if (formattedFiltered && formattedFiltered.trim().length > 0) {
+      setRemixHistory(prev => {
+        // If slot 0 is already identical to formattedFiltered, keep history
+        if (prev.length > 0 && prev[0] === formattedFiltered) {
+          return prev;
+        }
+        return addRemixToHistory(prev, formattedFiltered);
+      });
+      setActiveRemixIndex(0);
+    }
+    setCurrentPage(9);
+  }, [generatedScene?.prompt, generatedScene?.basePrompt, enabledSegmentIds]);
+
+  // Clear Remix History
+  const handleClearRemixHistory = () => {
+    clearRemixHistory();
+    setRemixHistory([]);
+    setActiveRemixIndex(0);
+  };
+
+  // 10 Compact Wizard Steps: Characters, Scene, Theme, Wardrobe, Rating, Action, Style, Prompt, Remix, Image
   const WIZARD_STEPS = [
     { step: 1 as WizardStep, title: 'Characters', icon: <Users size={14} /> },
     { step: 2 as WizardStep, title: 'Scene', icon: <Compass size={14} /> },
@@ -892,15 +1275,20 @@ CRITICAL RULES:
     { step: 6 as WizardStep, title: 'Action', icon: <Zap size={14} /> },
     { step: 7 as WizardStep, title: 'Style', icon: <Palette size={14} /> },
     { step: 8 as WizardStep, title: 'Prompt', icon: <Sparkles size={14} /> },
-    { step: 9 as WizardStep, title: 'Image', icon: <ImageIcon size={14} /> }
+    { step: 9 as WizardStep, title: 'Remix', icon: <Shuffle size={14} /> },
+    { step: 10 as WizardStep, title: 'Image', icon: <ImageIcon size={14} /> }
   ];
 
   const handleNext = () => {
-    if (currentPage < 9) {
+    if (currentPage < 10) {
       if (currentPage === 6 || currentPage === 7) {
         if (!generatedScene?.prompt && !generatedScene?.basePrompt) {
           handleGeneratePrompts();
         }
+      }
+      if (currentPage === 8) {
+        handleGoToRemix();
+        return;
       }
       setCurrentPage((prev) => (prev + 1) as WizardStep);
     }
@@ -916,34 +1304,6 @@ CRITICAL RULES:
 
   return (
     <div className="flex-1 flex flex-col h-full min-h-0 bg-lavender-bg/95 border-x border-lavender-border/40 overflow-hidden relative">
-      {/* Top Wizard Control Header */}
-      <div className="p-3 bg-lavender-surface/60 border-b border-lavender-border flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="p-1.5 rounded-lg bg-purple-500/20 text-purple-300 border border-purple-500/30">
-            <Sparkles size={18} />
-          </div>
-          <div>
-            <h2 className="text-base font-bold text-lavender-accent leading-tight">
-              Character Actions &amp; Scene Prompt Studio
-            </h2>
-            <p className="text-xs text-lavender-text/70">
-              Visual director for WAN Video, Mage.Space, SDXL, and Midjourney
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleResetDefaults}
-            className="px-3 py-1.5 text-xs font-bold bg-red-950/30 hover:bg-red-900/50 text-red-300 border border-red-500/30 rounded-lg flex items-center gap-1.5 transition-all shadow-sm cursor-pointer hover:border-red-500/60 active:scale-95"
-            title="Clear and reset all options to defaults"
-          >
-            <RotateCcw size={13} />
-            Reset Defaults
-          </button>
-        </div>
-      </div>
-
       <div className="flex-1 flex flex-col min-h-0 p-3 space-y-3 overflow-hidden">
         {/* Error message banner if any */}
         {errorMessage && (
@@ -955,7 +1315,7 @@ CRITICAL RULES:
           </div>
         )}
 
-        {/* STEP PROGRESS TABS (NO NUMBERS, COMPACT TITLES: Characters, Scene, Theme, Wardrobe, Rating, Action, Style, Prompt) */}
+        {/* STEP PROGRESS TABS (NO NUMBERS, COMPACT TITLES: Characters, Scene, Theme, Wardrobe, Rating, Action, Style, Prompt, Remix, Image) */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-lavender-border/50 scrollbar-thin shrink-0">
           {WIZARD_STEPS.map(({ step, title, icon }) => {
             const isCurrent = currentPage === step;
@@ -964,7 +1324,13 @@ CRITICAL RULES:
             return (
               <button
                 key={step}
-                onClick={() => setCurrentPage(step)}
+                onClick={() => {
+                  if (step === 9) {
+                    handleGoToRemix();
+                  } else {
+                    setCurrentPage(step);
+                  }
+                }}
                 className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 shrink-0 cursor-pointer select-none ${
                   isCurrent
                     ? 'bg-purple-900/60 text-purple-200 border border-purple-500/50 shadow-sm ring-1 ring-purple-500/30'
@@ -1205,11 +1571,16 @@ CRITICAL RULES:
           {currentPage === 8 && (
             <Step7GeneratedPrompt
               generatedPrompt={generatedScene?.prompt || generatedScene?.basePrompt || ''}
+              onChangePromptText={handleChangePromptText}
+              sectionOverrides={sectionOverrides}
+              onSaveSectionOverride={handleSaveSectionOverride}
+              onResetSectionOverride={handleResetSectionOverride}
               onGeneratePrompts={handleGeneratePrompts}
               onGenerateImage={handleGenerateImage}
               loadingImage={generatingImage}
               hasGeneratedImage={!!generatedSceneImage?.src}
-              onGoToImage={() => setCurrentPage(9)}
+              onGoToImage={() => setCurrentPage(10)}
+              onGoToRemix={handleGoToRemix}
               copiedPrompt={!!copiedMap['master_prompt']}
               onCopyPrompt={() => handleCopy('master_prompt', generatedScene?.prompt || generatedScene?.basePrompt || '')}
               promptViewMode={promptViewMode}
@@ -1226,8 +1597,42 @@ CRITICAL RULES:
             />
           )}
 
-          {/* STEP 9: IMAGE */}
+          {/* STEP 9: REMIX */}
           {currentPage === 9 && (
+            <Step9Remix
+              currentFilteredPrompt={formatFilteredPromptWithLineBreaks(
+                generatedScene?.prompt || generatedScene?.basePrompt || '',
+                enabledSegmentIds
+              ) || generatedScene?.prompt || generatedScene?.basePrompt || ''}
+              remixHistory={remixHistory}
+              activeHistoryIndex={activeRemixIndex ?? 0}
+              onSelectHistoryIndex={setActiveRemixIndex}
+              onClearRemixHistory={handleClearRemixHistory}
+              onGenerateRemixPrompt={handleGenerateRemixPrompt}
+              onSaveManualRemixPrompt={handleSaveManualRemixPrompt}
+              onGenerateRemixImage={handleGenerateRemixImage}
+              loadingRemixPrompt={loadingJobs.remix}
+              loadingImage={generatingImage}
+              onGoToImage={() => setCurrentPage(10)}
+              hasGeneratedImage={!!generatedSceneImage?.src}
+              onBackToPrompt={() => setCurrentPage(8)}
+              sceneTitle={generatedScene?.title || 'Noor Scene Remix'}
+              onCopyText={handleCopy}
+              copiedMap={copiedMap}
+              remixError={remixError}
+              onClearError={() => {
+                setRemixError(null);
+                setErrorMessage(null);
+              }}
+              selectedStyleCategory={selectedStyleCategory}
+              onSelectStyleCategory={handleRemixStyleCategoryChange}
+              selectedStyle={selectedImageStyle}
+              onSelectStyle={handleRemixStyleChange}
+            />
+          )}
+
+          {/* STEP 10: IMAGE */}
+          {currentPage === 10 && (
             <Step8Image
               imageSrc={generatedSceneImage?.src || null}
               imageTitle={generatedSceneImage?.title || generatedScene?.title || 'Noor Music Scene Artwork'}
@@ -1266,12 +1671,20 @@ CRITICAL RULES:
               <span>Back</span>
             </button>
 
-            {currentPage < 9 && (
+            {currentPage < 10 && (
               <button
                 onClick={handleNext}
                 className="px-5 py-2 text-xs font-bold bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-lg flex items-center gap-1.5 transition-all shadow-md cursor-pointer active:scale-95"
               >
-                <span>{currentPage === 7 ? 'View Prompt' : currentPage === 8 ? 'View Image' : 'Next'}</span>
+                <span>
+                  {currentPage === 7
+                    ? 'View Prompt'
+                    : currentPage === 8
+                    ? 'Remix Studio'
+                    : currentPage === 9
+                    ? 'View Image'
+                    : 'Next'}
+                </span>
                 <ChevronRight size={15} />
               </button>
             )}

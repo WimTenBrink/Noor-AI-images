@@ -23,10 +23,12 @@ export const Header: React.FC<HeaderProps> = ({
         { id: 'step-2', label: 'Scene', tooltipTitle: 'Scene & Setting', tooltipContent: 'Configure adventure theme, location, and choose from dozens of predefined scenes.' },
         { id: 'step-3', label: 'Theme', tooltipTitle: 'Atmospheric Theme', tooltipContent: 'Fine-tune lighting, weather conditions, scene mood, and instruments.' },
         { id: 'step-4', label: 'Wardrobe', tooltipTitle: 'Wardrobes & Outfits', tooltipContent: 'Select clothing collections and assign character attire.' },
-        { id: 'step-5', label: 'Rating', tooltipTitle: 'Demographics & Rating', tooltipContent: 'Set age categories, tomboy traits, camera framing, and prompt rating.' },
+        { id: 'step-5', label: 'Rating', tooltipTitle: 'Character Age & Rating', tooltipContent: 'Set age categories, tomboy traits, framing, and content rating.' },
         { id: 'step-6', label: 'Action', tooltipTitle: 'Actions & Poses', tooltipContent: 'Assign specific physical actions, athletic motions, and poses.' },
         { id: 'step-7', label: 'Style', tooltipTitle: 'Style & Medium', tooltipContent: 'Select artistic medium, style presets, and configure scene title.' },
         { id: 'step-8', label: 'Prompt', tooltipTitle: 'Master Prompt', tooltipContent: 'Inspect, filter, and copy inclusive AI prompts for WAN Video, Mage.Space, etc.' },
+        { id: 'step-9', label: 'Remix', tooltipTitle: 'Remix Studio', tooltipContent: 'Iteratively modify prompts with user command instructions and 0-9 history buffer.' },
+        { id: 'step-10', label: 'Image', tooltipTitle: 'Scene Artwork', tooltipContent: 'View, zoom, and inspect generated high-resolution scene artwork.' },
         { id: 'reset-scene', label: 'Reset to Defaults', tooltipTitle: 'Reset Scene', tooltipContent: 'Clear custom actions and restore default scene settings.' }
       ]
     },
@@ -36,12 +38,15 @@ export const Header: React.FC<HeaderProps> = ({
       icon: <FileJson size={14} />,
       items: [
         { id: 'schema-singer-action-scene', label: 'Singer Action Scene Schema (v1.0.0)', helpId: 'help-schema-singer-action-scene', tooltipTitle: 'Action Scene Schema', tooltipContent: 'Download formal JSON Schema for Singer Action Scene generated prompts.' },
+        { id: 'schema-remix-prompt', label: 'Remix Prompt Schema (v1.0.0)', helpId: 'help-schema-remix-prompt', tooltipTitle: 'Remix Prompt Schema', tooltipContent: 'Download formal JSON Schema for AI Remix iterative prompts.' },
         { id: 'singers-detailed-json', label: 'Singers Detailed Dataset (v1.0.0)', tooltipTitle: 'Singers Detailed Dataset', tooltipContent: 'Download complete JSON dataset of all 4 singers with detailed appearance, personality, lifestyle, Face, Prompt, and Body prompts.' },
         { id: 'schema-singers-detailed', label: 'Singers Detailed Schema (v1.0.0)', helpId: 'help-schema-singers-detailed', tooltipTitle: 'Singers Detailed Schema', tooltipContent: 'Download formal JSON Schema for Singers Detailed profiles dataset.' },
         { id: 'wardrobes-json', label: 'Wardrobes Dataset (v1.6.0)', tooltipTitle: 'Wardrobes Dataset', tooltipContent: 'Download complete JSON dataset of all wardrobes and clothing collections for all singers organized by Root / Singer / Event / Clothes.' },
         { id: 'schema-wardrobes', label: 'Wardrobes Schema (v1.6.0)', helpId: 'help-schema-wardrobes', tooltipTitle: 'Wardrobes Schema', tooltipContent: 'Download formal JSON Schema for Singer Wardrobes & Clothing collections.' },
         { id: 'farmhouse-json', label: 'Farmhouse Tree Dataset (v1.0.0)', tooltipTitle: 'Farmhouse Tree Dataset', tooltipContent: 'Download complete tree-structured JSON dataset (/Farm/House/Room/Object) of the farm, rooms, sauna, pool, barn, animals, fields, and garage.' },
         { id: 'schema-farmhouse', label: 'Farmhouse Schema (v1.0.0)', helpId: 'help-schema-farmhouse', tooltipTitle: 'Farmhouse Schema', tooltipContent: 'Download formal JSON Schema for Farmhouse tree dataset.' },
+        { id: 'image-styles-json', label: 'Image Styles Dataset (v1.0.0)', tooltipTitle: 'Image Styles Dataset', tooltipContent: 'Download complete JSON dataset of all 151 artistic image styles and categories for documentation.' },
+        { id: 'schema-image-styles', label: 'Image Styles Schema (v1.0.0)', helpId: 'help-schema-image-styles', tooltipTitle: 'Image Styles Schema', tooltipContent: 'Download formal JSON Schema for Image Styles and Aesthetics dataset.' },
         { id: 'schema-logs', label: 'System Logs Schema (v1.1.0)', helpId: 'help-schema-logs', tooltipTitle: 'Logs JSON Schema', tooltipContent: 'Download formal JSON Schema for Noor log entries.' },
         { id: 'schema-jobs', label: 'AI Jobs Queue Schema (v1.1.0)', helpId: 'help-schema-jobs', tooltipTitle: 'Jobs JSON Schema', tooltipContent: 'Download formal JSON Schema for AI Queue jobs.' }
       ]

@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://katje.bv/schemas/v1.0.0/remix-prompt.json",
+  "title": "NoorMusicRemixPrompt",
+  "version": "1.0.0",
+  "description": "JSON Schema for Noor Music Remix Studio iterative prompt revisions and revisions history.",
+  "type": "object",
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "type": "string" },
+    "title": { "type": "string", "description": "Short evocative title describing the remixed scene" },
+    "remixPrompt": { "type": "string", "description": "The complete remixed prompt string with clean line breaks separating sections" },
+    "summaryOfChanges": { "type": "string", "description": "Brief explanation of the specific modifications made" }
+  },
+  "required": ["version", "remixPrompt"]
+}
